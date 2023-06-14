@@ -25,22 +25,22 @@ type cliente = monitor{
     procedure entry enter_shop(int tipo) {
         switch(tipo) {
             case NORMALE:
+                clienti_in_attesa++;
                 while(n_commessi == 0 || (clienti_in_attesa + clienti_in_cassa + cambi_in_attesa > CAP)){
-                    clienti_in_attesa++;
                     normale_servito.wait();
-                    clienti_in_attesa--;
-                    n_commessi--;
                 }
-                break;
+                clienti_in_attesa--;
+                n_commessi--;
+            break;
             case SPECIALE:
+                cambi_in_attesa++;
                 while(! (n_commessi > 0 && !supervisor_busy) || (clienti_in_attesa + clienti_in_cassa + cambi_in_attesa > CAP)){
-                    cambi_in_attesa++;
                     speciale_servito.wait();
-                    cambi_in_attesa--;
-                    n_commessi--;
-                    supervisor_busy = true;
                 }
-                break;
+                cambi_in_attesa--;
+                n_commessi--;
+                supervisor_busy = true;
+            break;
         }
     }
 
@@ -55,7 +55,7 @@ type cliente = monitor{
                     normale_servito.notify();
                 }
                 pagamento.notify();
-                break;
+            break;
             case SPECIALE:
                 n_commessi++;
                 supervisor_busy = false;
@@ -65,16 +65,15 @@ type cliente = monitor{
                 else if (clienti_in_attesa > 0){
                     normale_servito.notify();
                 }
-                break;
+            break;
         }
     }
 
     procedure entry pay() {
         n_commessi++;
+        clienti_in_cassa++;
         while (clienti_in_cassa > 0) {
-            clienti_in_cassa++;
             pagamento.wait();
-            clienti_in_cassa--;
         }
     }
 }  
