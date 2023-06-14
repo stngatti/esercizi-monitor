@@ -51,61 +51,60 @@ type minibus = monitor{
 
     procedure entry sali_sul_bus_casa(taglia t, genere g) {
         int spazi = calcola_taglia(t, g);
-        while (posti_occupati + spazi > MAX) {
             switch (spazi) {
             case 1:
                 coda_magri_casa++;
-                ingresso_magri_casa.wait();
+                while (posti_occupati + spazi > MAX) { ingresso_magri_casa.wait(); }
                 posti_occupati += spazi;
                 coda_magri_casa--;
                 partenza.notify();
                 break;
             case 2:
                 coda_grassi_casa++;
-                ingresso_grassi_casa.wait();
+                while (posti_occupati + spazi > MAX) { ingresso_grassi_casa.wait(); }
                 posti_occupati += spazi;
                 coda_grassi_casa--;
                 partenza.notify();
                 break;
             case 4:
                 coda_obesi_casa++;
-                ingresso_obesi_casa.wait();
+                while (posti_occupati + spazi > MAX) { ingresso_obesi_casa.wait(); }
                 posti_occupati += spazi;
                 coda_obesi_casa--;
                 partenza.notify();
-                break;
-            }
+            break;
         }
     }
 
     procedure entry sali_sul_bus_uni(taglia t, genere g) {
         int spazi = calcola_taglia(t, g);
-        while (posti_occupati + spazi > MAX) {
-            switch (spazi) {
+        switch (spazi) {
             case 1:
                 coda_magri_uni++;
-                ingresso_magri_uni.wait();
+                while (posti_occupati + spazi > MAX) { ingresso_magri_uni.wait(); }
                 posti_occupati += spazi;
                 coda_magri_uni--;
                 partenza.notify();
                 break;
             case 2:
                 coda_grassi_uni++;
-                ingresso_grassi_uni.wait();
+                while (posti_occupati + spazi > MAX) { ingresso_grassi_uni.wait(); }
                 posti_occupati += spazi;
                 coda_grassi_uni--;
                 partenza.notify();
                 break;
             case 4:
                 coda_obesi_uni++;
-                ingresso_obesi_uni.wait();
+                while (posti_occupati + spazi > MAX) { ingresso_obesi_uni.wait(); }
                 posti_occupati += spazi;
                 coda_obesi_uni--;
                 partenza.notify();
-                break;
-            }
+            break;
         }
     }
+    
+    
+
 
     procedure entry scendi_dal_bus(taglia t, genere g) {
         persone_in_uscita++;

@@ -23,21 +23,21 @@ type bar = monitor {
     procedure entry entra(int squadra) {
         switch (squadra) {
             case LOCALE:
+                coda_locali++;
                 while (!aperto || tifosi_locali == false || persone_dentro == NMAX) {
-                    coda_locali++;
                     locale_in_coda.wait();
-                    coda_locali--;
                 }
+                coda_locali--;
                 persone_dentro++;
-                break;
+            break;
             case OSPITE:
+                coda_ospiti++;
                 while (!aperto || tifosi_locali == true || persone_dentro == NMAX) {
-                    coda_ospiti++;
                     ospite_in_coda.wait();
-                    coda_ospiti--;
                 }
+                coda_ospiti--;
                 persone_dentro++;
-                break;
+            break;
             }
         }
     
