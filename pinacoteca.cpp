@@ -17,6 +17,7 @@ type pinacoteca = monitor {
     bool esperto_impegnato, ascoltando_presentazione;
     var condition presentazione, fine_presentazione;
     var condition ingresso;
+    var 
 
     /// INIZIALIZZAZIONE ///
     n_depliant = 0;
@@ -38,21 +39,23 @@ type pinacoteca = monitor {
     }
 
     procedure entry ascolta_presentazione() {
-        coda_presentazione++;
+        coda_presentazione++; //incrementa la coda
         while (esperto_impegnato || coda_presentazione < K1 || dim_gruppo == K2) {
            presentazione.wait();
-           dim_gruppo++;
         }
+        dim_gruppo++;
         while (!esperto_impegnato) {
             fine_presentazione.wait();
         }
     }
 
     procedure entry avvia_presentazione() {
-        esperto_impegnato = true;
-        coda_presentazione -= dim_gruppo;
-        for (int i = 0; i < dim_gruppo; i++) {
-            presentazione.notify();
+        while (dim_gruppo >= K1) {
+            esperto_impegnato = true;
+            coda_presentazione -= dim_gruppo;
+            for (int i = 0; i < dim_gruppo; i++) {
+                presentazione.notify();
+            }
         }
     }
 
