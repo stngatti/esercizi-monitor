@@ -14,9 +14,7 @@ positivo per quali processi, e si propongano modifiche e/o aggiunte per evitare 
 
 type golf = monitor{
     int n_palline, coda_esperti, coda_principianti;
-    enum type tipo_giocatore {PRINCIPIANTE, ESPERTO};
     var condition esperti, principianti;
-
 
     /// INIZIALIZZAZIONE ///
     n_palline = P;
@@ -60,7 +58,7 @@ type golf = monitor{
         if (coda_principianti > 0) { principianti.notify(); }
         else if (coda_esperti > 0) { esperti.notify(); }
     }
-    
+
 }
 
 ///ISTANZE///
