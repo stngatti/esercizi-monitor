@@ -5,24 +5,24 @@ aspettare la formazione del gruppo e la presenza dell'unica guida. I visitatori 
 se ci sono abbastanza posti disponibili, però hanno la priorità sui turisti L, che vengono sospesi 
 finche non viene ammesso un gruppo G*/
 
-/// SEMANTICA MESA ///
+//SEMANTICA MESA
 
-#define N 100
 #define MIN 10
 #define MAX 20
-
-
+#define N 50
 
 type parco = monitor{
     bool guida_impegnata, in_viaggio;
-    int coda_liberi, coda_guidati, visitatori_dentro, dim_prossimo_gruppo, dim_gruppo_guida;
-    var condition libero, guidato, coda_gruppo, visita_parco, ristoro_fonti_poiano;
+    int coda_liberi, coda_guidati, visitatori_dentro, dim_prossimo_gruppo, dim_gruppo_dentro;
+    var condition libero, guidati, gruppo_pronto, visita_parco, ristoro_fonti_poiano;
 
 
     /// INIZIALIZZAZIONE ///
     guida_impegnata = false;
+    in_viaggio = false;
     visitatori_dentro = 0;
     dim_prossimo_gruppo = 0;
+    dim_gruppo_dentro = 0;
     coda_liberi = 0;
     coda_guidati = 0;
     ritrovo = 0;
@@ -31,58 +31,68 @@ type parco = monitor{
     procedure entry libero_vuole_entrare() {
         coda_liberi++;
         while (visitatori_dentro == N || 
-        visitatori_dentro + dim_prossimo_gruppo > N) {
-            libero.wait();
+        visitatori_dentro + coda_guidati > N) {
+            libero.wait(); //aspetta che ci sia spazio
         }
         visitatori_dentro++;
+        coda_liberi--;
     }
 
     procedure entry guidato_vuole_entrare() {
         coda_guidati++;
-        dim_prossimo_gruppo = min(MAX, dim_prossimo_gruppo + 1);
-        while (visitatori_dentro + dim_prossimo_gruppo > N || 
-            guida_impegnata ||
-            dim_prossimo_gruppo < MIN) {
-            guidati.wait();
+        if (coda_guidati >= MIN) {
+            gruppo_pronto.notify(); //se il gruppo raggiunge la grandezza minima, risveglia la guida
+        }
+        while ( guida_impegnata || dim_prossimo_gruppo == MAX || coda_guidati > 0  ) {
+            guidati.wait(); //attendono tutti in coda senza sorpassi
         }
         coda_guidati--;
         visitatori_dentro++;
-        while (in_viaggio) { visita_parco.wait(); } //una volta risvegliato può fare quello che vuole
+        dim_prossimo_gruppo++;
+        while (in_viaggio) { 
+            visita_parco.wait(); //una volta risvegliato può fare quello che vuole
+        }
+        dim_gruppo_dentro++; //scendono dal pullman e cambiano gruppo
+        dim_prossimo_gruppo--;
     }
 
     procedure entry avvia_guida() {
-        dim_gruppo_guida = min(dim_prossimo_viaggio, MAX); //accetta il primo gruppo
-        for(int i = 0; i < dim_gruppo_guida; i++) {
+        guida_impegnata = false;
+        while (coda_guidati < MIN || !fine_guida) {
+            gruppo_pronto.wait(); //aspetta che il gruppo raggiunga la grandezza minima o che la visita di prima sia finita
+        }
+        in_viaggio = true;
+        for(int i = 0; i <= min(MAX, coda_guidati); i++) {
             guidati.notify(); 
         }
         guida_impegnata = true; //la guida rimane impegnata per il prossimo gruppo
-        in_viaggio = true;
-        dim_prossimo_viaggio = 0;
     }
 
     procedure entry libero_vuole_uscire() {
         visitatori_dentro--;
-        if (visitatori_dentro + dim_prossimo_gruppo < N) { libero.notify(); }
+        if (visitatori_dentro + MAX < N) { 
+            libero.notify(); //se ci sono abbastanza posti liberi, risveglia un visitatore libero indipendentemente dalla grandezza della coda
+        }
     }
 
     procedure entry guidato_vuole_uscire() {
-        ritrovo++;
-        while (ritrovo != dim_gruppo_guida || guida_impegnata = true) {
-            ristoro_fonti_poiano.wait();
+        ritrovo++; 
+        while (ritrovo != dim_gruppo_dentro || !fine_visita) {
+            ristoro_fonti_poiano.wait(); //finchè non si possono salutare tutti non se ne va nessuno
         }
-        n_visitatori--;
+        visitatori_dentro--;
     }
 
     procedure entry termina_guida() {
-        guida_impegnata = false;
-        for (int i = 0; i < dim_gruppo_guida; i++) {
-            ristoro_fonti_poiano.notify();
+        fine_visita = true;
+        for (int i = 0; i < dim_gruppo_dentro; i++) {
+            ristoro_fonti_poiano.notify(); //saluta tutti
         }
-        if (coda_guidati > 0) {
-            guidati.notify();
+        if (coda_guidati >= MIN) {
+            gruppo_pronto.notify(); //per pianificare la prossima guida
         }
-        else if (coda_liberi > 0) {
-            libero.notify();
+        while (persone_dentro + coda_guidati <= N && coda_liberi > 0) {
+            libero.notify(); //risveglia i visitatori liberi
         }
     }
 }
@@ -91,7 +101,7 @@ type parco = monitor{
 visitatorel.libero_vuole_entrare()
 <ammira la valle dei gessi>
 visitatorel.libero_vuole_uscire()
-<se ne torna a Pavia>
+<esce>
 
 visitatoreg.guidato_vuole_entrare()
 <aspetta il pullmino e va al parco>
@@ -102,4 +112,4 @@ visitatoreg.guidato_vuole_uscire()
 guida.avvia_guida()
 <controlla il pullman e parte>
 guida.termina_guida()
-<si presenta al ristorante>
+<si presenta al ristorante e saluta tutti>
